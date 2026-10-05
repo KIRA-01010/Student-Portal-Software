@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% from "partials/form_macros.html" import field, submit_button %}
+
+{% block title %}{{ 'Edit course' if is_edit else 'Add course' }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-7">
+
+    <div class="mb-4">
+      <h1 class="h3 fw-bold mb-1">{{ 'Edit course grade' if is_edit else 'Add course grade' }}</h1>
+      <p class="text-body-secondary mb-0">For {{ record.full_name }} ({{ record.registration_number }})</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4 p-lg-5">
+
+        {% if form_error %}
+          <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+            <i class="bi bi-exclamation-octagon-fill mt-1"></i>
+            <div>{{ form_error }}</div>
+          </div>
+        {% endif %}
+
+        <form method="post"
+              action="{{ url_for('teacher_course_edit_submit', record_id=record.id, course_id=course_grade.id) if is_edit else url_for('teacher_course_new_submit', record_id=record.id) }}"
+              class="needs-validation" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+          {{ field('course_name', 'Course / Subject',
+                   value=form_values.get('course_name', ''),
+                   errors=errors, icon='bi-journal-text', maxlength=150,
+                   invalid_hint='Course name is required.') }}
+
+          <div class="row g-0 g-sm-3">
+            <div class="col-12 col-sm-4">
+              {{ field('semester', 'Semester', type='number',
+                       value=form_values.get('semester', ''),
+                       errors=errors, icon='bi-calendar3',
+                       help_text='1-8',
+                       invalid_hint='Semester must be between 1 and 8.') }}
+            </div>
+            <div class="col-12 col-sm-4">
+              {{ field('credit_hours', 'Credit Hours', type='number',
+                       value=form_values.get('credit_hours', ''),
+                       errors=errors, icon='bi-clock',
+                       help_text='1-6',
+                       invalid_hint='Credit hours must be between 1 and 6.') }}
+            </div>
+            <div class="col-12 col-sm-4">
+              {{ field('grade', 'Grade',
+                       value=form_values.get('grade', ''),
+                       errors=errors, icon='bi-award',
+                       help_text='A, A-, B+, B, B-, C+, C, D, F',
+                       invalid_hint='Please enter a valid grade.') }}
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+            {{ submit_button('Save course', icon='bi-check2') }}
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <p class="text-center mt-4 mb-0">
+      <a href="{{ url_for('teacher_student_detail_page', record_id=record.id) }}" class="text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i>Cancel
+      </a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

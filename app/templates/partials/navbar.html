@@ -1,0 +1,172 @@
+{# Top navigation. Auth links only render for a signed-in student. #}
+<nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top shadow-sm">
+  <div class="container">
+
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-semibold"
+       href="{{ url_for('home') }}">
+      <span class="brand-mark d-inline-flex align-items-center justify-content-center">
+        <i class="bi bi-mortarboard-fill"></i>
+      </span>
+      <span>{{ app_name }}</span>
+    </a>
+
+    {% if current_student %}
+      <button class="navbar-toggler border-0" type="button"
+              data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path == '/dashboard' %}active fw-semibold{% endif %}"
+               href="{{ url_for('dashboard_page') }}">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/courses') %}active fw-semibold{% endif %}"
+               href="{{ url_for('courses_page') }}">
+              <i class="bi bi-journals me-1"></i>Courses
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/assignments') %}active fw-semibold{% endif %}"
+               href="{{ url_for('assignments_page') }}">
+              <i class="bi bi-journal-check me-1"></i>Assignments
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path == '/grades' %}active fw-semibold{% endif %}"
+               href="{{ url_for('grades_page') }}">
+              <i class="bi bi-graph-up-arrow me-1"></i>Grades
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path == '/profile' %}active fw-semibold{% endif %}"
+               href="{{ url_for('profile_page') }}">
+              <i class="bi bi-person me-1"></i>Profile
+            </a>
+          </li>
+
+          <li class="nav-item dropdown ms-lg-2">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar-sm">{{ current_student.initials }}</span>
+              <span class="d-lg-none d-xl-inline">{{ current_student.first_name }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li class="px-3 py-2">
+                <div class="fw-semibold small">{{ current_student.full_name }}</div>
+                <div class="text-body-secondary small text-truncate">{{ current_student.email }}</div>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item" href="{{ url_for('profile_page') }}">
+                  <i class="bi bi-person me-2"></i>Profile
+                </a>
+              </li>
+              <li>
+                {# Logout is a POST so it cannot be triggered by a stray link or prefetch. #}
+                <form method="post" action="{{ url_for('logout') }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="dropdown-item text-danger">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    {% elif current_teacher %}
+      <button class="navbar-toggler border-0" type="button"
+              data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path == '/teacher/dashboard' %}active fw-semibold{% endif %}"
+               href="{{ url_for('teacher_dashboard_page') }}">
+              <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/teacher/courses') %}active fw-semibold{% endif %}"
+               href="{{ url_for('teacher_courses_page') }}">
+              <i class="bi bi-journals me-1"></i>Courses
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/teacher/assignments') %}active fw-semibold{% endif %}"
+               href="{{ url_for('teacher_assignments_page') }}">
+              <i class="bi bi-journal-check me-1"></i>Assignments
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/teacher/students') %}active fw-semibold{% endif %}"
+               href="{{ url_for('teacher_students_list') }}">
+              <i class="bi bi-clipboard-data me-1"></i>Academic records
+            </a>
+          </li>
+          {% if current_teacher.is_admin %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/admin/students') %}active fw-semibold{% endif %}" href="{{ url_for('admin_students_page') }}">
+              <i class="bi bi-person-plus me-1"></i>Students
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/admin/courses') %}active fw-semibold{% endif %}" href="{{ url_for('admin_courses_page') }}">
+              <i class="bi bi-journals me-1"></i>Course catalog
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.url.path.startswith('/admin/teachers') %}active fw-semibold{% endif %}" href="{{ url_for('admin_teachers_page') }}">
+              <i class="bi bi-shield-check me-1"></i>Teacher accounts
+            </a>
+          </li>
+          {% endif %}
+
+          <li class="nav-item dropdown ms-lg-2">
+            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar-sm">{{ current_teacher.initials }}</span>
+              <span class="d-lg-none d-xl-inline">{{ current_teacher.first_name }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li class="px-3 py-2">
+                <div class="fw-semibold small">{{ current_teacher.full_name }}</div>
+                <div class="text-body-secondary small text-truncate">{{ current_teacher.email }}</div>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <form method="post" action="{{ url_for('teacher_logout') }}" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="dropdown-item text-danger">
+                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    {% else %}
+      <div class="d-flex align-items-center gap-2 gap-lg-3">
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('login_page') }}">Student sign in</a>
+        </div>
+        <div class="vr d-none d-sm-block"></div>
+        <a class="small text-body-secondary text-decoration-none d-none d-sm-inline"
+           href="{{ url_for('teacher_login_page') }}">
+          Teacher sign in
+        </a>
+      </div>
+    {% endif %}
+
+  </div>
+</nav>

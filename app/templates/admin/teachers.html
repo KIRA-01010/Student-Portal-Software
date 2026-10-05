@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher accounts · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <h1 class="h3 fw-bold mb-1">Teacher accounts</h1>
+  <p class="text-body-secondary mb-0">
+    Teachers can register themselves, but can only sign in once you approve them.
+  </p>
+</div>
+
+{# Small reusable action buttons: both are POST forms carrying the CSRF token. #}
+{% macro action_form(endpoint, teacher_id, label, icon, style) %}
+  <form method="post" action="{{ url_for(endpoint, teacher_id=teacher_id) }}" class="d-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="btn btn-sm {{ style }}">
+      <i class="bi {{ icon }} me-1"></i>{{ label }}
+    </button>
+  </form>
+{% endmacro %}
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <h2 class="h5 fw-bold mb-0">Awaiting approval</h2>
+      {% if pending %}
+        <span class="badge rounded-pill text-bg-warning">{{ pending|length }}</span>
+      {% endif %}
+    </div>
+
+    {% if pending %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr class="text-body-secondary small text-uppercase">
+              <th>Name</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Registered</th>
+              <th class="text-end">Decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for teacher in pending %}
+              <tr>
+                <td class="fw-semibold">{{ teacher.full_name }}</td>
+                <td>{{ teacher.username }}</td>
+                <td>{{ teacher.email }}</td>
+                <td>{{ teacher.department or '—' }}</td>
+                <td>{{ teacher.created_at | date }}</td>
+                <td class="text-end text-nowrap">
+                  {{ action_form('admin_teacher_approve', teacher.id, 'Approve', 'bi-check-lg', 'btn-success') }}
+                  {{ action_form('admin_teacher_reject', teacher.id, 'Reject', 'bi-x-lg', 'btn-outline-danger') }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary mb-0">
+        <i class="bi bi-check-circle me-1"></i>Nobody is waiting for approval.
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-body p-4">
+    <h2 class="h5 fw-bold mb-3">All other teachers</h2>
+
+    {% if reviewed %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr class="text-body-secondary small text-uppercase">
+              <th>Name</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th class="text-end">Access</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for teacher in reviewed %}
+              <tr>
+                <td class="fw-semibold">
+                  {{ teacher.full_name }}
+                  {% if teacher.is_admin %}
+                    <span class="badge text-bg-primary ms-1">Admin</span>
+                  {% endif %}
+                </td>
+                <td>{{ teacher.username }}</td>
+                <td>{{ teacher.email }}</td>
+                <td>
+                  {% if teacher.is_approved %}
+                    <span class="badge text-bg-success">Approved</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Rejected</span>
+                  {% endif %}
+                </td>
+                <td class="text-end text-nowrap">
+                  {% if teacher.is_admin %}
+                    <span class="text-body-secondary small">Managed from the command line</span>
+                  {% elif teacher.is_approved %}
+                    {{ action_form('admin_teacher_reject', teacher.id, 'Revoke access', 'bi-slash-circle', 'btn-outline-danger') }}
+                  {% else %}
+                    {{ action_form('admin_teacher_approve', teacher.id, 'Approve', 'bi-check-lg', 'btn-outline-success') }}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary mb-0">No other teacher accounts yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

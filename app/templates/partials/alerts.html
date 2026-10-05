@@ -1,0 +1,21 @@
+{# One-shot flash messages queued by the server (see utils.templating.flash) #}
+{% if flashes %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-10">
+      {% for item in flashes %}
+        {% set icon = {
+             'success': 'bi-check-circle-fill',
+             'danger':  'bi-exclamation-octagon-fill',
+             'warning': 'bi-exclamation-triangle-fill',
+             'info':    'bi-info-circle-fill'
+           }.get(item.category, 'bi-info-circle-fill') %}
+        <div class="alert alert-{{ item.category }} alert-dismissible fade show d-flex align-items-start gap-2"
+             role="alert">
+          <i class="bi {{ icon }} mt-1"></i>
+          <div class="flex-grow-1">{{ item.message }}</div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard · {{ app_name }}{% endblock %}
+
+{% block content %}
+
+{% if pending_teachers %}
+  <div class="alert alert-warning d-flex align-items-center justify-content-between gap-3 flex-wrap" role="alert">
+    <div>
+      <i class="bi bi-person-exclamation me-2"></i>
+      <strong>{{ pending_teachers }}</strong>
+      teacher account{{ '' if pending_teachers == 1 else 's' }}
+      {{ 'is' if pending_teachers == 1 else 'are' }} waiting for your approval.
+    </div>
+    <a href="{{ url_for('admin_teachers_page') }}" class="btn btn-sm btn-warning">Review</a>
+  </div>
+{% endif %}
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+  <div class="card-body p-4 p-lg-5 hero-panel">
+    <div class="row align-items-center g-4">
+      <div class="col-12 col-lg-8">
+        <span class="badge rounded-pill text-bg-light mb-3">
+          <i class="bi bi-easel2-fill me-1"></i>Teacher Dashboard
+        </span>
+        <h1 class="h2 fw-bold text-white mb-2">
+          Welcome, {{ teacher.full_name }}
+        </h1>
+        <p class="text-white-50 mb-0">
+          Manage academic records and track your students' CGPA.
+        </p>
+      </div>
+      <div class="col-12 col-lg-4 text-lg-end">
+        <div class="avatar-lg ms-lg-auto">{{ teacher.initials }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-4"><a class="btn btn-primary" href="{{ url_for('teacher_assignments_page') }}"><i class="bi bi-journal-check me-1"></i>Manage assignments</a><a class="btn btn-outline-primary" href="{{ url_for('teacher_courses_page') }}"><i class="bi bi-journals me-1"></i>Manage courses</a><a class="btn btn-outline-primary" href="{{ url_for('teacher_courses_page') }}"><i class="bi bi-journals me-1"></i>Manage exams</a></div>
+
+<div class="row g-3 g-lg-4 mb-4">
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body">
+        <div class="stat-icon text-bg-primary-subtle mb-3">
+          <i class="bi bi-people"></i>
+        </div>
+        <h2 class="h6 text-body-secondary text-uppercase small fw-semibold mb-1">Total students</h2>
+        <p class="fs-3 fw-bold mb-0">{{ total_students }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body">
+        <div class="stat-icon text-bg-info-subtle mb-3">
+          <i class="bi bi-envelope-at"></i>
+        </div>
+        <h2 class="h6 text-body-secondary text-uppercase small fw-semibold mb-1">Signed in as</h2>
+        <p class="fs-6 fw-semibold mb-0 text-truncate" title="{{ teacher.email }}">{{ teacher.email }}</p>
+        {% if teacher.department %}
+          <p class="text-body-secondary small mb-0">{{ teacher.department }}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body">
+        <div class="stat-icon text-bg-warning-subtle mb-3">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <h2 class="h6 text-body-secondary text-uppercase small fw-semibold mb-1">Last login</h2>
+        {% if previous_login %}
+          <p class="fs-6 fw-semibold mb-0">{{ previous_login | date }}</p>
+          <p class="text-body-secondary small mb-0">{{ previous_login | datetime('%I:%M %p') }}</p>
+        {% else %}
+          <p class="fs-6 fw-semibold mb-0">First visit</p>
+          <p class="text-body-secondary small mb-0">Welcome aboard!</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 g-lg-4">
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h5 fw-bold mb-0">Recent student records</h2>
+          <a href="{{ url_for('teacher_students_list') }}" class="small text-decoration-none">
+            View all <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+
+        {% if recent_records %}
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr class="text-body-secondary small text-uppercase">
+                  <th>Student</th>
+                  <th>Reg. No.</th>
+                  <th>Department</th>
+                  <th>CGPA</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in recent_records %}
+                  {% set cgpa = cgpa_service.compute_cgpa(record) %}
+                  <tr>
+                    <td class="fw-semibold">{{ record.full_name }}</td>
+                    <td>{{ record.registration_number }}</td>
+                    <td>{{ record.department }}</td>
+                    <td>{{ '%.2f'|format(cgpa) if cgpa is not none else 'N/A' }}</td>
+                    <td class="text-end">
+                      <a href="{{ url_for('teacher_student_detail_page', record_id=record.id) }}"
+                         class="btn btn-sm btn-outline-secondary">View</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-body-secondary mb-0">No student records yet. Add your first student to get started.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body p-4 d-flex flex-column">
+        <h2 class="h5 fw-bold mb-1">Quick actions</h2>
+        <p class="text-body-secondary small">Manage your student records.</p>
+        <div class="d-grid gap-2 mt-2">
+          <a href="{{ url_for('teacher_student_new_page') }}" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i>Add student
+          </a>
+          <a href="{{ url_for('teacher_students_list') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-people me-1"></i>All students
+          </a>
+        </div>
+        <form method="post" action="{{ url_for('teacher_logout') }}" class="mt-auto pt-3">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn btn-outline-danger w-100">
+            <i class="bi bi-box-arrow-right me-1"></i>Sign out
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

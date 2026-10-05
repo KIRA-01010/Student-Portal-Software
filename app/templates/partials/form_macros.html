@@ -1,0 +1,73 @@
+{#
+  Reusable Bootstrap 5 form controls.
+
+  Every field renders:
+    * a floating-icon input group,
+    * the browser's constraint-validation message (client side), or
+    * the server's message when `errors[name]` is set (server side).
+#}
+
+{% macro field(name, label, type='text', value='', errors={}, icon=None,
+               required=True, autocomplete=None, placeholder=' ',
+               help_text=None, minlength=None, maxlength=None,
+               pattern=None, inputmode=None, min=None, max=None, invalid_hint=None, autofocus=False) %}
+  {% set has_error = errors.get(name) %}
+  <div class="mb-3">
+    <label for="{{ name }}" class="form-label fw-medium">{{ label }}</label>
+
+    <div class="input-group has-validation">
+      {% if icon %}
+        <span class="input-group-text bg-body-tertiary text-body-secondary">
+          <i class="bi {{ icon }}"></i>
+        </span>
+      {% endif %}
+
+      <input
+        type="{{ type }}"
+        class="form-control{% if has_error %} is-invalid{% endif %}"
+        id="{{ name }}"
+        name="{{ name }}"
+        value="{{ value }}"
+        placeholder="{{ placeholder }}"
+        {% if required %}required{% endif %}
+        {% if minlength %}minlength="{{ minlength }}"{% endif %}
+        {% if maxlength %}maxlength="{{ maxlength }}"{% endif %}
+        {% if pattern %}pattern="{{ pattern }}"{% endif %}
+        {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+        {% if inputmode %}inputmode="{{ inputmode }}"{% endif %}
+        {% if min is not none %}min="{{ min }}"{% endif %}
+        {% if max is not none %}max="{{ max }}"{% endif %}
+        {% if autofocus %}autofocus{% endif %}
+        {% if has_error %}aria-invalid="true"{% endif %}
+        aria-describedby="{{ name }}-feedback">
+
+      {% if type == 'password' %}
+        <button class="btn btn-outline-secondary" type="button"
+                data-toggle-password="#{{ name }}"
+                aria-label="Show password" tabindex="-1">
+          <i class="bi bi-eye"></i>
+        </button>
+      {% endif %}
+
+      <div class="invalid-feedback" id="{{ name }}-feedback">
+        {{ has_error or invalid_hint or 'Please provide a valid ' ~ label|lower ~ '.' }}
+      </div>
+    </div>
+
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+
+{# Full-width submit button with a built-in loading state (see static/js/main.js). #}
+{% macro submit_button(label, icon=None) %}
+  <button type="submit" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center gap-2"
+          data-loading-text="Please wait…">
+    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+    <span class="btn-label">
+      {% if icon %}<i class="bi {{ icon }} me-1"></i>{% endif %}{{ label }}
+    </span>
+  </button>
+{% endmacro %}

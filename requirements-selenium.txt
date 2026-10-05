@@ -1,0 +1,7 @@
+# Browser-automation tests (install on top of the application requirements).
+#   pip install -r requirements-selenium.txt
+-r requirements.txt
+
+selenium>=4.25,<5        # 4.6+ downloads the matching browser driver by itself
+pytest==8.3.4
+pytest-html>=4.1,<5      # optional: HTML report (pytest --html=reports/report.html)

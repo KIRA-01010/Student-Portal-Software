@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Profile · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-12 col-lg-8">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4"><div><h1 class="h3 fw-bold mb-1">Profile</h1><p class="text-body-secondary mb-0">Your administrator-managed account details.</p></div><span class="badge rounded-pill text-bg-secondary">Read-only</span></div>
+  <div class="card border-0 shadow-sm rounded-4"><div class="card-body p-4 p-lg-5">
+    <div class="d-flex align-items-center gap-3 mb-4"><div class="avatar-lg">{{ student.initials }}</div><div class="min-w-0"><div class="h5 fw-bold mb-0 text-truncate">{{ student.full_name }}</div><div class="text-body-secondary text-truncate">Registration No. {{ student.registration_number }}</div></div></div>
+    <dl class="row mb-0">
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2">Registration number</dt><dd class="col-sm-8 fw-medium py-2">{{ student.registration_number }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">First name</dt><dd class="col-sm-8 fw-medium py-2 border-top">{{ student.first_name }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">Last name</dt><dd class="col-sm-8 fw-medium py-2 border-top">{{ student.last_name }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">Email</dt><dd class="col-sm-8 fw-medium py-2 border-top text-break">{{ student.email }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">Department</dt><dd class="col-sm-8 fw-medium py-2 border-top">{{ student.department }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">Season</dt><dd class="col-sm-8 fw-medium py-2 border-top">{{ student.season }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">Year</dt><dd class="col-sm-8 fw-medium py-2 border-top">{{ student.academic_year }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">Current semester</dt><dd class="col-sm-8 fw-medium py-2 border-top">Semester {{ student.current_semester }}</dd>
+      <dt class="col-sm-4 text-body-secondary fw-normal py-2 border-top">Entry type</dt><dd class="col-sm-8 fw-medium py-2 border-top">{{ student.entry_type }}</dd>
+    </dl>
+    <div class="alert alert-light border mt-4 mb-0"><i class="bi bi-lock-fill me-1"></i> Academic and profile details can only be changed by an administrator.</div>
+  </div></div>
+</div></div>
+{% endblock %}

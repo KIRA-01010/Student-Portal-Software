@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "partials/form_macros.html" import field, submit_button %}
+
+{% block title %}{{ 'Edit student' if is_edit else 'Add student' }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+
+    <div class="mb-4">
+      <h1 class="h3 fw-bold mb-1">{{ 'Edit student record' if is_edit else 'Add student record' }}</h1>
+      <p class="text-body-secondary mb-0">
+        {{ 'Update this student\'s academic profile.' if is_edit else 'Create a new student academic profile.' }}
+      </p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4 p-lg-5">
+
+        {% if form_error %}
+          <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+            <i class="bi bi-exclamation-octagon-fill mt-1"></i>
+            <div>{{ form_error }}</div>
+          </div>
+        {% endif %}
+
+        <form method="post"
+              action="{{ url_for('teacher_student_edit_submit', record_id=record.id) if is_edit else url_for('teacher_student_new_submit') }}"
+              class="needs-validation" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+          {% if is_edit %}
+            <div class="mb-3">
+              <label class="form-label fw-medium">Registration Number</label>
+              <input type="text" class="form-control" value="{{ form_values.get('registration_number', '') }}" disabled>
+              <div class="form-text">Registration number cannot be changed after creation.</div>
+            </div>
+          {% else %}
+            {{ field('registration_number', 'Registration Number',
+                     value=form_values.get('registration_number', ''),
+                     errors=errors, icon='bi-hash', maxlength=50,
+                     help_text='e.g. REG-2026-0001',
+                     invalid_hint='Registration number is required.') }}
+          {% endif %}
+
+          <div class="row g-0 g-sm-3">
+            <div class="col-12 col-sm-6">
+              {{ field('first_name', 'First Name',
+                       value=form_values.get('first_name', ''),
+                       errors=errors, icon='bi-person', maxlength=80,
+                       invalid_hint='First name is required.') }}
+            </div>
+            <div class="col-12 col-sm-6">
+              {{ field('last_name', 'Last Name',
+                       value=form_values.get('last_name', ''),
+                       errors=errors, icon='bi-person', maxlength=80,
+                       invalid_hint='Last name is required.') }}
+            </div>
+          </div>
+
+          {{ field('department', 'Department',
+                   value=form_values.get('department', ''),
+                   errors=errors, icon='bi-building', maxlength=120,
+                   invalid_hint='Department is required.') }}
+
+          {{ field('current_semester', 'Current Semester', type='number',
+                   value=form_values.get('current_semester', ''),
+                   errors=errors, icon='bi-calendar3',
+                   help_text='1-8',
+                   invalid_hint='Semester must be between 1 and 8.') }}
+
+          <div class="d-flex gap-2 mt-3">
+            {{ submit_button('Save student' if not is_edit else 'Save changes', icon='bi-check2') }}
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <p class="text-center mt-4 mb-0">
+      <a href="{{ url_for('teacher_student_detail_page', record_id=record.id) if is_edit else url_for('teacher_students_list') }}"
+         class="text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i>Cancel
+      </a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

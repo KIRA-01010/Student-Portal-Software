@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Students · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Student records</h1>
+    <p class="text-body-secondary mb-0">{{ records|length }} record{{ '' if records|length == 1 else 's' }}{% if search %} matching &ldquo;{{ search }}&rdquo;{% endif %}{% if show_all %} across all teachers{% endif %}</p>
+  </div>
+  <span class="badge rounded-pill text-bg-light border text-dark"><i class="bi bi-lock me-1"></i>Students are created by Admin</span>
+</div>
+
+{% if current_teacher and current_teacher.is_admin %}
+<ul class="nav nav-pills mb-3" aria-label="Which records to show">
+  <li class="nav-item">
+    <a class="nav-link {% if not show_all %}active{% endif %}"
+       href="{{ url_for('teacher_students_list') }}{% if search %}?q={{ search|urlencode }}{% endif %}">
+      My students
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if show_all %}active{% endif %}"
+       href="{{ url_for('teacher_students_list') }}?scope=all{% if search %}&amp;q={{ search|urlencode }}{% endif %}">
+      All teachers
+    </a>
+  </li>
+</ul>
+{% endif %}
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-body p-3">
+    <form method="get" action="{{ url_for('teacher_students_list') }}" class="d-flex gap-2">
+      {% if show_all %}<input type="hidden" name="scope" value="all">{% endif %}
+      <input type="search" name="q" value="{{ search }}"
+             class="form-control" placeholder="Search by name or registration number">
+      <button type="submit" class="btn btn-outline-secondary">
+        <i class="bi bi-search"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-body p-4">
+    {% if records %}
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr class="text-body-secondary small text-uppercase">
+              <th>Reg. No.</th>
+              <th>Student</th>
+              <th>Department</th>
+              <th>Semester</th>
+              <th>CGPA</th>
+              {% if show_all %}<th>Owner</th>{% endif %}
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for record in records %}
+              {% set cgpa = cgpa_service.compute_cgpa(record) %}
+              <tr>
+                <td>{{ record.registration_number }}</td>
+                <td class="fw-semibold">
+                  {{ record.full_name }}
+                  {% if record.is_linked %}
+                    <i class="bi bi-link-45deg text-success ms-1"
+                       title="Linked to a student portal account"></i>
+                  {% endif %}
+                  {% if not show_all and not is_owner(record) %}
+                    <span class="badge text-bg-secondary ms-1"
+                          title="Owned by {{ record.owner.full_name }}">Shared with you</span>
+                  {% endif %}
+                </td>
+                <td>{{ record.department }}</td>
+                <td>{{ record.current_semester }}</td>
+                <td>{{ '%.2f'|format(cgpa) if cgpa is not none else 'N/A' }}</td>
+                {% if show_all %}<td>{{ record.owner.full_name }}</td>{% endif %}
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1">
+                    <a href="{{ url_for('teacher_student_detail_page', record_id=record.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="View">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    {% if can_manage(record) %}<a href="{{ url_for('teacher_student_edit_page', record_id=record.id) }}"
+                       class="btn btn-sm btn-outline-secondary" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </a>{% endif %}
+                    {% if can_manage(record) %}
+                    <a href="{{ url_for('teacher_student_delete_confirm_page', record_id=record.id) }}"
+                       class="btn btn-sm btn-outline-danger" title="Delete">
+                      <i class="bi bi-trash"></i>
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-people display-4 text-body-tertiary"></i>
+        <p class="text-body-secondary mt-3 mb-3">
+          {% if search %}No students match your search.{% else %}No student records yet.{% endif %}
+        </p>
+
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

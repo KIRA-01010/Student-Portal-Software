@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "partials/form_macros.html" import field %}
+{% block title %}Course catalog · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Course catalog</h1>
+    <p class="text-body-secondary mb-0">Pick a season / year / semester / department, then add the courses for that offering. Students already registered under it are enrolled automatically.</p>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-body p-4">
+    {% if category %}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+          <span class="badge text-bg-primary-subtle text-primary fs-6">
+            <i class="bi bi-collection me-1"></i>{{ category.season }} {{ category.academic_year }} · Semester {{ category.semester }} · {{ category.department }}
+          </span>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin_courses_page') }}"><i class="bi bi-arrow-repeat me-1"></i>Change category</a>
+      </div>
+      {% if form_error %}<div class="alert alert-danger">{{ form_error }}</div>{% endif %}
+      {% if errors.get('category') %}<div class="alert alert-danger">{{ errors.get('category') }}</div>{% endif %}
+      <form method="post" action="{{ url_for('admin_course_create') }}" class="row g-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="season" value="{{ category.season }}">
+        <input type="hidden" name="academic_year" value="{{ category.academic_year }}">
+        <input type="hidden" name="semester" value="{{ category.semester }}">
+        <input type="hidden" name="department" value="{{ category.department }}">
+        <div class="col-md-4">{{ field('name','Course Name',value=form_values.get('name',''),errors=errors,icon='bi-journal-text') }}</div>
+        <div class="col-md-2">{{ field('code','Code',value=form_values.get('code',''),errors=errors,icon='bi-hash') }}</div>
+        <div class="col-md-3">
+          <label class="form-label">Entry Type</label>
+          <select class="form-select{% if errors.get('entry_type') %} is-invalid{% endif %}" name="entry_type" required>
+            <option value="">Select…</option>
+            {% for t in entry_types %}<option value="{{ t }}" {% if form_values.get('entry_type') == t %}selected{% endif %}>{{ t }}</option>{% endfor %}
+          </select>
+          {% if errors.get('entry_type') %}<div class="invalid-feedback">{{ errors.get('entry_type') }}</div>{% endif %}
+        </div>
+        <div class="col-md-3">{{ field('description','Description',value=form_values.get('description',''),errors=errors,icon='bi-card-text', required=False) }}</div>
+        <div class="col-12"><button class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Add course to this category</button></div>
+      </form>
+    {% else %}
+      <h2 class="h5 fw-bold mb-3">1. Choose a category</h2>
+      {% if errors.get('category') %}<div class="alert alert-danger">{{ errors.get('category') }}</div>{% endif %}
+      <form method="get" action="{{ url_for('admin_courses_page') }}" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Season</label>
+          <select class="form-select" name="season" required>
+            <option value="">Select…</option>
+            {% for s in seasons %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Year</label>
+          <input type="number" class="form-control" name="academic_year" value="{{ current_year }}" min="2000" max="2100" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Semester</label>
+          <select class="form-select" name="semester" required>
+            <option value="">Select…</option>
+            {% for sem in semesters %}<option value="{{ sem }}">{{ sem }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Department</label>
+          <input type="text" class="form-control" name="department" placeholder="e.g. Computer Science" required>
+        </div>
+        <div class="col-12"><button class="btn btn-primary"><i class="bi bi-arrow-right-circle me-1"></i>Continue</button></div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if not category %}<h2 class="h5 fw-bold mb-3">All courses</h2>{% endif %}
+<div class="row g-3">
+  {% for c in courses %}
+  <div class="col-12 col-xl-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100 {% if c.archived %}border-warning-subtle{% endif %}">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between gap-3">
+          <div>
+            <span class="badge text-bg-primary-subtle text-primary">{{ c.code }}</span>
+            <h2 class="h5 fw-bold mt-2 mb-1">{{ c.name }}</h2>
+            <div class="small text-body-secondary">{{ c.season }} {{ c.academic_year }} · Semester {{ c.semester }} · {{ c.department }} · {{ c.entry_type }}</div>
+          </div>
+          <span class="badge {% if c.archived %}text-bg-warning{% elif c.teacher %}text-bg-success{% else %}text-bg-secondary{% endif %}">{% if c.archived %}Archived{% elif c.teacher %}{{ c.teacher.full_name }}{% else %}Unassigned{% endif %}</span>
+        </div>
+        <p class="text-body-secondary small mt-3 mb-2">{{ c.description or 'No description.' }}</p>
+        <div class="small text-body-secondary mb-3"><i class="bi bi-people me-1"></i>{{ c.enrollments|length }} students · <i class="bi bi-clipboard-check ms-2 me-1"></i>{{ c.assignments|length }} assignments</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% if c.archived %}
+            <form method="post" action="{{ url_for('admin_course_restore', course_id=c.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-success">Restore</button></form>
+          {% else %}
+            <form method="post" action="{{ url_for('admin_course_archive', course_id=c.id) }}" onsubmit="return confirm('Archive this course? Existing students and assignments will be preserved.');"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-warning">Archive</button></form>
+          {% endif %}
+          <form method="post" action="{{ url_for('admin_course_delete', course_id=c.id) }}" onsubmit="return confirm('{% if c.enrollments or c.assignments %}This course contains data and cannot be permanently deleted. Archive it instead.{% else %}Permanently delete this empty course?{% endif %}');"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-sm btn-outline-danger" {% if c.enrollments or c.assignments %}disabled{% endif %}><i class="bi bi-trash me-1"></i>Delete</button></form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12"><div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center text-body-secondary">{% if category %}No courses in this category yet — add the first one above.{% else %}No courses in the catalog yet.{% endif %}</div></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

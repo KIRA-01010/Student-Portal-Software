@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Courses · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="mb-4"><h1 class="h3 fw-bold mb-1">Courses</h1><p class="text-body-secondary mb-0">Your currently enrolled courses.</p></div>
+{% if courses %}<div class="row g-3">{% for c in courses %}<div class="col-12 col-md-6"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4"><span class="badge text-bg-primary-subtle text-primary">{{ c.code }}</span><h2 class="h5 fw-bold mt-3">{{ c.name }}</h2><p class="text-body-secondary small">{{ c.description or 'No course description available.' }}</p><div class="small"><i class="bi bi-person me-1"></i>{{ c.teacher.full_name }}</div><div class="small text-body-secondary mt-1">{{ c.season }} {{ c.academic_year }} · Semester {{ c.semester }}</div><a class="btn btn-outline-primary mt-3" href="{{ url_for('assignments_page') }}">View assignments</a></div></div></div>{% endfor %}</div>{% else %}<div class="card border-0 shadow-sm rounded-4"><div class="card-body p-5 text-center"><i class="bi bi-journals display-5 text-body-secondary"></i><h2 class="h5 mt-3">No courses yet</h2><p class="text-body-secondary mb-0">A teacher will enroll you in courses when they are available.</p></div></div>{% endif %}
+{% endblock %}

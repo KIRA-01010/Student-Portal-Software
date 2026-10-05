@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}My grades · {{ app_name }}{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="h3 fw-bold mb-1">My grades</h1>
+  {% if record %}
+    <p class="text-body-secondary mb-0">
+      {{ record.full_name }} &middot; {{ record.registration_number }} &middot; {{ record.department }}
+    </p>
+  {% else %}
+    <p class="text-body-secondary mb-0">Your results, as recorded by your teacher.</p>
+  {% endif %}
+</div>
+
+{% if not record %}
+
+  {# --- Nothing linked yet: explain how to get access --------------------- #}
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4 p-lg-5 text-center">
+      <i class="bi bi-journal-x display-4 text-body-tertiary"></i>
+      <h2 class="h5 fw-bold mt-3">No academic record is linked to your account yet</h2>
+      <p class="text-body-secondary mb-3">
+        Your grades appear here once a teacher links their record for you to this account.
+        Give your teacher one of these so they can find it:
+      </p>
+      <div class="d-inline-flex flex-column flex-sm-row gap-2 justify-content-center">
+        <span class="badge text-bg-light border fs-6 fw-medium px-3 py-2">
+          <i class="bi bi-at me-1"></i>{{ student.registration_number }}
+        </span>
+        <span class="badge text-bg-light border fs-6 fw-medium px-3 py-2">
+          <i class="bi bi-envelope me-1"></i>{{ student.email }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+{% else %}
+
+  <div class="row g-3 g-lg-4 mb-4">
+    <div class="col-12 col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <div class="stat-icon text-bg-primary-subtle mb-3"><i class="bi bi-mortarboard"></i></div>
+          <h2 class="h6 text-body-secondary text-uppercase small fw-semibold mb-1">Overall CGPA</h2>
+          <p class="fs-3 fw-bold mb-0">{{ '%.2f'|format(cgpa) if cgpa is not none else 'N/A' }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <div class="stat-icon text-bg-info-subtle mb-3"><i class="bi bi-calendar3"></i></div>
+          <h2 class="h6 text-body-secondary text-uppercase small fw-semibold mb-1">Current semester</h2>
+          <p class="fs-3 fw-bold mb-0">{{ record.current_semester }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-4">
+      <div class="card h-100 border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <div class="stat-icon text-bg-success-subtle mb-3"><i class="bi bi-journal-check"></i></div>
+          <h2 class="h6 text-body-secondary text-uppercase small fw-semibold mb-1">Courses recorded</h2>
+          <p class="fs-3 fw-bold mb-0">{{ record.course_grades|length }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4">
+      <h2 class="h5 fw-bold mb-3">Semester-wise courses &amp; grades</h2>
+
+      {% if semester_breakdown %}
+        {% for entry in semester_breakdown %}
+          <div class="{{ 'mb-4' if not loop.last else '' }}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="h6 fw-semibold mb-0">Semester {{ entry.semester }}</h3>
+              <span class="badge text-bg-secondary">
+                SGPA: {{ '%.2f'|format(entry.sgpa) if entry.sgpa is not none else 'N/A' }}
+              </span>
+            </div>
+            <div class="table-responsive">
+              <table class="table align-middle mb-0">
+                <thead>
+                  <tr class="text-body-secondary small text-uppercase">
+                    <th>Course</th>
+                    <th>Credit Hours</th>
+                    <th>Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for course in entry.courses %}
+                    <tr>
+                      <td>{{ course.course_name }}</td>
+                      <td>{{ course.credit_hours }}</td>
+                      <td><span class="badge text-bg-light border">{{ course.grade }}</span></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-center py-4">
+          <i class="bi bi-journal-x display-4 text-body-tertiary"></i>
+          <p class="text-body-secondary mt-3 mb-0">No courses have been recorded for you yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="text-body-secondary small mt-3 mb-0">
+    <i class="bi bi-info-circle me-1"></i>
+    These results are entered by your teacher. If something looks wrong, please contact them.
+  </p>
+
+{% endif %}
+
+{% endblock %}
