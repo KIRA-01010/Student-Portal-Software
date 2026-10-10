@@ -26,3 +26,5 @@ htmlcov/
 
 # Uploaded assignment files
 uploads/
+".venv*" 
+.venv*
