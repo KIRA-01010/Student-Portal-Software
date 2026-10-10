@@ -49,9 +49,14 @@ architecture with Alembic migrations and automated tests.
 git clone https://github.com/KIRA-01010/Student-Portal-Software.git
 cd Student-Portal-Software
 
-# 2. Create a virtual environment
+# 2. Create and activate a virtual environment (Python 3.12 recommended)
+# Linux / macOS:
 python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate
+
+# Windows (PowerShell):
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
 
 # 3. Install dependencies
 pip install -r requirements-dev.txt
