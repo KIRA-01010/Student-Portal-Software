@@ -1,3 +1,18 @@
+## Live Demo
+
+**https://student-portal-software.onrender.com/**
+
+| Role | Sign in at | Login | Password |
+|---|---|---|---|
+| Student | `/login` | `20250001` | `DemoStudent#2026` |
+| Teacher | `/teacher/login` | `demo_teacher` | `DemoTeacher#2026` |
+| Admin | `/teacher/login` | `demo_admin` | `DemoAdmin#2026` |
+
+Notes:
+- Hosted on a free tier: after about 15 minutes idle the first load can take up to a minute.
+- Demo data (including uploaded files) resets whenever the server restarts.
+- These are public demo accounts. Please don't enter real personal information.
+
 # Student Portal
 
 A production-quality student portal built with **FastAPI**, **SQLAlchemy 2.0**, **Jinja2** and
