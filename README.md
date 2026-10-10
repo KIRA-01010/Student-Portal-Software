@@ -15,10 +15,13 @@ Notes:
 
 # Student Portal
 
-A production-quality student portal built with **FastAPI**, **SQLAlchemy 2.0**, **Jinja2** and
-**Bootstrap 5**. Phase 1 covers registration, login/logout, session management and a
-responsive dashboard — structured so courses, attendance, grades and assignments can be
-dropped in without reworking the foundations.
+A full-stack student management portal built with **FastAPI**, **SQLAlchemy 2.0**, **Jinja2** and
+**Bootstrap 5**, with role-based access for **Students, Teachers and Administrators**.
+It covers admin-managed student accounts, a course catalog with automatic enrollment,
+assignment submissions (PDF/image uploads with deadline tracking), CGPA/SGPA grade records,
+record sharing between teachers, and a security layer with server-side sessions, CSRF
+protection, bcrypt hashing and login rate-limiting. The code follows a service-layer
+architecture with Alembic migrations and automated tests.
 
 ---
 
@@ -43,7 +46,8 @@ dropped in without reworking the foundations.
 
 ```bash
 # 1. Clone and enter the project
-cd student-portal
+git clone https://github.com/KIRA-01010/Student-Portal-Software.git
+cd Student-Portal-Software
 
 # 2. Create a virtual environment
 python3 -m venv .venv
@@ -58,6 +62,9 @@ cp .env.example .env
 
 # 5. Run
 python main.py
+
+# 6. (Optional) Load the demo accounts shown in "Live Demo" above
+python seed_demo.py
 ```
 
 Open <http://127.0.0.1:8000> — you'll be redirected to the login page. Teachers can
