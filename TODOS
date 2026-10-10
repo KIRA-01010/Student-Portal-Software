@@ -5,4 +5,3 @@
 #12, sign-in flow. require_guest only checks for a student session, so a signed-in teacher visiting /login still sees the student form. There is one auth_token per browser, so signing in as one role still revokes the other.
 #13, headers and deploy. No CSP, X-Frame-Options, Referrer-Policy or HSTS anywhere, and no Dockerfile. The --proxy-headers advice is in the README and in a client_ip comment, but nothing in the code enforces it.
 #15, tooling and docs. No ruff config, no CI and no pyproject.toml. The README's Tests section still says 18 tests, but the suite now has about 180 test functions. Its project-structure tree also only lists the student module. The README does now cover the teacher, admin and grades features in prose.
-One small extra: debug defaults to True in config.py. The #4 protection therefore only applies once someone sets DEBUG=false. Defaulting to production-safe would be the fail-closed choice, but that's a judgment call for you.
