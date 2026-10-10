@@ -1,3 +1,13 @@
+# Student Portal
+
+A full-stack student management portal built with **FastAPI**, **SQLAlchemy 2.0**, **Jinja2** and
+**Bootstrap 5**, with role-based access for **Students, Teachers and Administrators**.
+It covers admin-managed student accounts, a course catalog with automatic enrollment,
+assignment submissions (PDF/image uploads with deadline tracking), CGPA/SGPA grade records,
+record sharing between teachers, and a security layer with server-side sessions, CSRF
+protection, bcrypt hashing and login rate-limiting. The code follows a service-layer
+architecture with Alembic migrations and automated tests.
+
 ## Live Demo
 
 **https://student-portal-software.onrender.com/**
@@ -13,31 +23,22 @@ Notes:
 - Demo data (including uploaded files) resets whenever the server restarts.
 - These are public demo accounts. Please don't enter real personal information.
 
-# Student Portal
-
-A full-stack student management portal built with **FastAPI**, **SQLAlchemy 2.0**, **Jinja2** and
-**Bootstrap 5**, with role-based access for **Students, Teachers and Administrators**.
-It covers admin-managed student accounts, a course catalog with automatic enrollment,
-assignment submissions (PDF/image uploads with deadline tracking), CGPA/SGPA grade records,
-record sharing between teachers, and a security layer with server-side sessions, CSRF
-protection, bcrypt hashing and login rate-limiting. The code follows a service-layer
-architecture with Alembic migrations and automated tests.
-
 ---
 
 ## Features
 
 | Area | What's included |
 |---|---|
-| **Registration** | First/last name, email, username, password + confirmation. Trimmed input, unique email & username, 8-character minimum, bcrypt hashing, inline validation messages. |
-| **Login** | Sign in with **either** email or username. Generic `Invalid username/password.` message so accounts cannot be enumerated. Repeated failures lock the visitor out for a while (see *Security notes*). |
-| **Sessions** | Server-side sessions: the `HttpOnly`, `SameSite=Lax` cookie holds only a random token whose hash is stored in the database, so logging out really ends access (a copied cookie stops working). 7-day cap; a fresh session is issued on every login to prevent fixation. |
-| **Teacher approval** | Anyone can register as a teacher, but a new account is *pending* and cannot sign in until an administrator approves it on the **Teacher accounts** page. Administrators are set from the command line only. See *Teacher accounts and administrators*. |
-| **Student grades** | Students see their own CGPA, semester-wise courses and SGPA under **Grades** (read-only). A teacher links a record to a student's account by username or email; a student can only ever see the one record linked to their own account. See *Student grades*. |
+| **Roles** | Student, Teacher and Administrator, each with its own permissions. Students sign in at `/login`, staff at `/teacher/login`. |
+| **Student accounts** | Created by an administrator, with no self-registration. Students sign in with their 8-digit registration number, and each student gets one linked academic record automatically. |
+| **Teacher approval** | Teachers can register, but a new account is *pending* and cannot sign in until an administrator approves it on the **Teacher accounts** page. Administrators are set from the command line only. See *Teacher accounts and administrators*. |
+| **Course catalog** | Administrators create courses by season, academic year, semester and department. Matching students are enrolled automatically, teachers claim the courses they teach, and courses can be archived or restored. |
+| **Assignments** | Teachers create assignments with deadlines. Students upload PDF or image submissions, and each submission is flagged on time or late. |
+| **Grades** | CGPA and SGPA are computed live from letter grades and credit hours. Students see their own record read-only; the owner, shared teachers and administrators manage grades. See *Student grades*. |
 | **Shared records & admin access** | A record has one owner; the owner can share it with other approved teachers, who then view and edit its details and grades. Administrators can open every record and hand a record to a new owner. See *Sharing records and administrator access*. |
-| **Dashboard** | Welcome banner, and cards for student name, registered email, registration date and last login. |
+| **Sessions** | Server-side sessions: the `HttpOnly`, `SameSite=Lax` cookie holds only a random token whose hash is stored in the database, so logging out really ends access (a copied cookie stops working). 7-day cap; a fresh session is issued on every login to prevent fixation. |
 | **Validation** | Bootstrap client-side validation *and* full server-side re-validation. Submitted values are preserved on error (never passwords). |
-| **Security** | bcrypt hashing, per-session CSRF tokens on every form, protected routes, ORM-only queries (no string-built SQL), autoescaped templates, generic error pages. |
+| **Security** | bcrypt hashing, per-session CSRF tokens on every form, login rate-limiting, protected routes, ORM-only queries (no string-built SQL), autoescaped templates, generic error pages. |
 | **UX** | Success/error alerts, submit-button loading spinners, show/hide password toggles, mobile → desktop responsive layout. |
 
 ---
@@ -65,15 +66,18 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 # Keep DEBUG=true for local development.
 
-# 5. Run
-python main.py
-
-# 6. (Optional) Load the demo accounts shown in "Live Demo" above
+# 5. (Optional) Load the demo accounts shown in "Live Demo" above
+alembic upgrade head
 python seed_demo.py
+
+# 6. Run
+python main.py
 ```
 
-Open <http://127.0.0.1:8000> — you'll be redirected to the login page. Teachers can
-register and wait for administrator approval; administrators create student accounts.
+Open <http://127.0.0.1:8000> — you'll be redirected to the student sign-in page. Staff sign
+in at `/teacher/login`. If you loaded the demo data, use the logins from the **Live Demo**
+table above. Without it, teachers can register and wait for administrator approval, and
+administrators create student accounts.
 
 Alternative run command with autoreload:
 
@@ -119,17 +123,27 @@ DATABASE_URL="postgresql+psycopg://user:pass@localhost:5432/student_portal"
 
 ### Student model
 
+Student accounts are created by an administrator (see `app/services/student_service.py`).
+
 | Column | Type | Notes |
 |---|---|---|
 | `id` | Integer | Primary key |
+| `registration_number` | String(8) | Unique, indexed; the 8-digit number students sign in with |
 | `first_name` | String(80) | Required |
 | `last_name` | String(80) | Required |
-| `username` | String(50) | Unique, indexed, stored lower-case |
+| `username` | String(50) | Unique, indexed; kept for backwards compatibility and set to the registration number |
 | `email` | String(255) | Unique, indexed, stored lower-case |
 | `password_hash` | String(255) | bcrypt |
+| `department` | String(120) | With season, year and semester, decides which courses the student is enrolled in |
+| `season` | String(10) | `Fall` or `Spring` |
+| `academic_year` | Integer | Year of the offering |
+| `current_semester` | Integer | 1–8, defaults to 1 |
+| `entry_type` | String(10) | `Regular` or `Lateral` |
 | `last_login_at` | DateTime | Nullable |
 | `created_at` | DateTime | Set by the database |
 | `updated_at` | DateTime | Maintained by the database on update |
+
+Migrations `0001`–`0009` build the schema; `alembic upgrade head` applies all of them.
 
 ---
 
@@ -153,9 +167,11 @@ python -m app.cli promote <username>  # make an administrator (also approves the
 python -m app.cli demote <username>   # back to an ordinary teacher
 ```
 
-**Creating the first administrator:** register a teacher account on the site, then run
-`python -m app.cli promote <that username>`. In development the command brings the database
-schema up to date first; with `DEBUG=false` run `alembic upgrade head` beforehand.
+**Creating the first administrator:** register a teacher account on the site (`/teacher/register`),
+then run `python -m app.cli promote <that username>`. In development the command brings the
+database schema up to date first; with `DEBUG=false` run `alembic upgrade head` beforehand.
+For a local demo, `python seed_demo.py` instead creates an approved administrator
+(`demo_admin`) for you.
 
 **Upgrading an existing installation:** migration `0004` marks every teacher who already exists as
 *approved*, so nobody is locked out, and makes nobody an administrator. Run
@@ -166,38 +182,40 @@ anyone could have created a teacher account.
 
 ## Student grades
 
-Teachers keep academic records for students; **a student sees a record only after their
-teacher links it to the student's portal account.**
+Each student has exactly one academic record. **It is created automatically, and linked to the
+student's account, when an administrator creates the student.** A student sees only the record
+linked to their own account.
 
-- **Linking (teacher):** open a record → *Student portal access* → enter the student's
-  **username or email** → *Link account*. *Change link* points the record at a different
-  account (the previous student loses access at once) and *Unlink* removes access. The
-  students list marks linked records with a link icon.
 - **Viewing (student):** **Grades** in the navbar shows the record's CGPA, current semester
   and every course grouped by semester with its SGPA; the dashboard shows a summary card.
-  Until a record is linked, the page shows the student's username and email to give to
-  their teacher. Everything is read-only, and grades are computed live, so a teacher's
-  edit appears on the next page load.
-- **Why teachers link, not students:** registration numbers are not secret, so letting a
+  Everything is read-only, and grades are computed live, so an edit by staff appears on the
+  next page load.
+- **Editing (staff):** only the record's owner, a teacher it has been shared with, or an
+  administrator can add, change or remove grades. A teacher who can see a student only because
+  the student is enrolled in one of their courses has view-only access.
+- **Older records:** records that predate automatic linking can still be linked by their owner
+  or an administrator: open a record → *Student portal access* → enter the student's
+  **username or email** → *Link account*. *Change link* points the record at a different
+  account (the previous student loses access at once) and *Unlink* removes access.
+- **Why students can't claim records:** registration numbers are not secret, so letting a
   student "claim" a record by typing one would let anyone who knows a number read that
-  student's grades. Here an approved teacher decides who sees each record.
-- **Safeguards:** only the teacher who owns a record can link or unlink it; each student
-  account can be linked to **one** record (enforced by a unique database index, so two
-  teachers racing to link the same account cannot both succeed); the "already linked"
-  message never reveals whose record it is; and if the account's name differs from the
-  record's name the teacher gets a warning, since a typo would show one student another's
-  grades. The student page takes no record id at all — the record is looked up from the
-  signed-in student's own id — so there is nothing in a URL to tamper with.
+  student's grades.
+- **Safeguards:** each student account can be linked to **one** record (enforced by a unique
+  database index, so two staff members racing to link the same account cannot both succeed);
+  the "already linked" message never reveals whose record it is; and if the account's name
+  differs from the record's name the user gets a warning, since a typo would show one student
+  another's grades. The student page takes no record id at all — the record is looked up from
+  the signed-in student's own id — so there is nothing in a URL to tamper with.
 
 **Upgrading:** migration `0005` adds the unique index. Nothing was linkable before, so no
-existing data is affected and no record is linked automatically: after upgrading, link each
-student's record from its page.
+existing data is affected and no record is linked automatically: after upgrading an older
+database, link each student's record from its page.
 
 ---
 
 ## Sharing records and administrator access
 
-Each record has exactly **one owner** — the teacher who created it. Registration numbers stay
+Each record has exactly **one owner** — the teacher or administrator who created it. Registration numbers stay
 unique across all teachers (a student has one number), so two teachers work with the same
 student by **sharing the record**, not by creating it twice.
 
@@ -239,55 +257,69 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-18 end-to-end tests cover registration validation (duplicates, mismatched passwords,
-short passwords, bad email, whitespace trimming, value preservation), login by email and
-username, wrong credentials, route protection, CSRF enforcement, logout and password
-hashing. They run against an in-memory database and never touch `student_portal.db`.
+The suite covers authentication, CSRF enforcement, role-based access, grades, courses and
+assignments. Tests run against an in-memory database and never touch `student_portal.db`.
+Browser tests (Selenium) live in `selenium_tests/`, with their dependencies in
+`requirements-selenium.txt`.
 
 ---
 
 ## Project structure
 
 ```
-student-portal/
+Student-Portal-Software/
 ├── app/
 │   ├── __init__.py            # application factory: middleware, routes, error handlers
+│   ├── cli.py                 # command-line administration (list / promote / demote)
 │   ├── config.py              # env-driven settings (pydantic-settings)
 │   ├── database/
 │   │   ├── base.py            # declarative Base + created_at/updated_at mixin
+│   │   ├── migrate.py         # runs Alembic migrations from inside the app
 │   │   └── session.py         # engine, SessionLocal, get_db dependency
-│   ├── models/
-│   │   └── student.py         # Student ORM model
+│   ├── models/                # account, student, teacher, student_record, course, security
 │   ├── routes/                # controllers — thin, no business logic
-│   │   ├── auth.py            # /register, /login, /logout
-│   │   ├── dashboard.py       # /dashboard, /profile
+│   │   ├── auth.py            # student sign-in / sign-out
+│   │   ├── teacher_auth.py    # teacher register / sign-in / sign-out
+│   │   ├── account_flow.py    # the shared register / sign-in page flow
+│   │   ├── dashboard.py       # student dashboard, grades, profile
+│   │   ├── teacher_dashboard.py
+│   │   ├── teacher_students.py# academic records, grades, sharing
+│   │   ├── courses.py         # student course view
+│   │   ├── assignments.py     # student and teacher assignment workflows
+│   │   ├── admin.py           # teachers, students and course catalog (admins only)
 │   │   └── pages.py           # /, /healthz
-│   ├── schemas/
-│   │   └── auth.py            # form objects + server-side validation rules
+│   ├── schemas/               # form objects + server-side validation rules
 │   ├── services/              # business logic — reusable and testable
-│   │   ├── auth_service.py    # register, authenticate, session handling
-│   │   ├── student_service.py # all Student queries
+│   │   ├── account_auth.py    # authentication shared by every account type
+│   │   ├── auth_service.py    # student authentication
+│   │   ├── teacher_auth_service.py
+│   │   ├── session_service.py # server-side login sessions
+│   │   ├── login_throttle.py  # brute-force protection
+│   │   ├── student_service.py # administrator-managed student accounts
+│   │   ├── teacher_service.py / teacher_admin_service.py
+│   │   ├── student_record_service.py  # record access rules and grades
+│   │   ├── cgpa_service.py    # CGPA / SGPA calculation
+│   │   ├── course_service.py  # catalog, enrollment, assignments, submissions
 │   │   └── exceptions.py      # domain errors
 │   ├── utils/
 │   │   ├── security.py        # bcrypt hashing, CSRF tokens
 │   │   ├── validators.py      # field-level validation helpers
-│   │   ├── dependencies.py    # require_student / require_guest / verify_csrf
+│   │   ├── dependencies.py    # require_student / require_teacher / require_admin / verify_csrf
 │   │   ├── templating.py      # Jinja env, flash messages, shared context
-│   │   └── exceptions.py      # transport-level errors
-│   ├── templates/
-│   │   ├── base.html
-│   │   ├── partials/          # navbar, footer, alerts, form macros
-│   │   ├── auth/              # login.html, register.html
-│   │   ├── dashboard/         # index.html, profile.html
-│   │   └── errors/            # 404, 500, generic
+│   │   └── clock.py, network.py, exceptions.py
+│   ├── templates/             # base.html, partials/, auth/, dashboard/, teacher/, admin/, errors/
 │   └── static/
 │       ├── css/styles.css     # thin theme layer over Bootstrap
 │       └── js/main.js         # validation, loading states, password toggles
-├── migrations/                # Alembic
-├── tests/
+├── migrations/                # Alembic (0001–0009)
+├── tests/                     # pytest suite
+├── selenium_tests/            # browser tests
 ├── main.py                    # entry point
+├── seed_demo.py               # demo accounts and sample data (idempotent)
+├── wipe_data.py               # one-time reset: wipes all data except admin accounts
 ├── requirements.txt
 ├── requirements-dev.txt
+├── requirements-selenium.txt
 └── .env.example
 ```
 
@@ -323,6 +355,8 @@ All settings come from environment variables or `.env` (see `.env.example`).
 
 ---
 
+---
+
 ## Security notes
 
 - **Passwords** — bcrypt with a per-password salt; inputs longer than bcrypt's 72-byte
@@ -349,7 +383,8 @@ All settings come from environment variables or `.env` (see `.env.example`).
   from the database on every request and can only be granted by `python -m app.cli`.
 - **Grade privacy** — a student is shown the record linked to *their own account* and
   nothing else; the lookup uses the session's student id, never a request parameter. Linking
-  is teacher-only, ownership-checked and CSRF-protected.
+  and unlinking (for older records) is limited to the record's owner or an administrator,
+  ownership-checked and CSRF-protected.
 - **Record access** — every record lookup goes through `student_record_service.get_accessible`
   (owner, shared teacher or administrator, else 404) and owner-only actions additionally
   require `can_manage`; the rules live in one service module rather than in each route. The
@@ -379,25 +414,39 @@ All settings come from environment variables or `.env` (see `.env.example`).
 6. Create your first administrator (`python -m app.cli promote <username>`, after registering
    that teacher account). Until you do, new teachers stay pending and nobody can approve them.
 
+### Example: the live demo on Render
+
+The public demo runs on Render's free tier with:
+
+- **Build command:** `pip install -r requirements.txt`
+- **Start command:**
+  `alembic upgrade head && python seed_demo.py && uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'`
+- **Environment variables:** `DEBUG=false`, a generated `SECRET_KEY`, `SESSION_HTTPS_ONLY=true`,
+  `PYTHON_VERSION=3.12.3`
+
+`seed_demo.py` is safe to run on every start: it creates the demo administrator, teacher,
+students, courses, grades and assignments only if they don't exist yet. The demo uses SQLite
+on an ephemeral disk, so its data resets whenever the server restarts. The demo passwords are
+public by design; never reuse them anywhere real.
+
 ---
 
 ## Extending the portal
 
-Adding a feature (courses, attendance, grades, assignments) follows the same four steps
-every time:
+Adding a feature (for example, attendance) follows the same four steps every time:
 
-1. **Model** — add `app/models/course.py`, export it from `app/models/__init__.py`.
-2. **Migration** — `alembic revision --autogenerate -m "add courses"`.
-3. **Service** — put the queries and rules in `app/services/course_service.py`.
-4. **Route + template** — create `app/routes/courses.py` and register it in
-   `app/routes/__init__.py`; add templates under `app/templates/courses/`.
+1. **Model** — add `app/models/attendance.py`, export it from `app/models/__init__.py`.
+2. **Migration** — `alembic revision --autogenerate -m "add attendance"`.
+3. **Service** — put the queries and rules in `app/services/attendance_service.py`.
+4. **Route + template** — create `app/routes/attendance.py` and register it in
+   `app/routes/__init__.py`; add templates under `app/templates/attendance/`.
 
-Protecting a new page is one dependency:
+Protecting a new page is one dependency (`require_student`, `require_teacher` or `require_admin`):
 
 ```python
-@router.get("/courses")
-def courses_page(request: Request, student: Student = Depends(require_student)):
-    return render(request, "courses/index.html", {"student": student})
+@router.get("/attendance")
+def attendance_page(request: Request, student: Student = Depends(require_student)):
+    return render(request, "attendance/index.html", {"student": student})
 ```
 
 Any form you add just needs `<input type="hidden" name="csrf_token" value="{{ csrf_token }}">`
@@ -410,4 +459,3 @@ and `Depends(verify_csrf)` on the POST handler.
 - Timestamps are stored and displayed in UTC.
 - Bootstrap 5.3 and Bootstrap Icons load from a CDN with SRI hashes; vendor them locally
   if the deployment must work offline.
-# smes-proj-student-portal
